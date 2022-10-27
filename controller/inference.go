@@ -54,10 +54,6 @@ func (i Inference) initParams(c *gin.Context) {
 	i.Info.ProjectOwner = c.PostForm("project_owner")
 }
 
-func (i Inference) GetGroupName() string {
-	return i.Info.ProjectName
-}
-
 func (i Inference) GeneMetaName() string {
 	return fmt.Sprintf("inference-%s-%s", i.Info.ProjectName, i.Info.LastCommit)
 }

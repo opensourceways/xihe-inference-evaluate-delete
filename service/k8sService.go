@@ -34,7 +34,6 @@ type ResListStatus struct {
 }
 
 type ParamInter interface {
-	GetGroupName() string
 	GeneMetaName() string
 }
 
@@ -124,24 +123,17 @@ func (s K8sService) Update(expiry int) (interface{}, error) {
 }
 
 func (s K8sService) getResource() (schema.GroupVersionResource, error, *unstructured.Unstructured) {
-	_, err, res := s.resource()
+	k, err, res := s.resource()
 	if err != nil {
 		return schema.GroupVersionResource{}, err, nil
 	}
-
-	kind, ok := res.Object["kind"].(string)
-	if !ok {
-		return schema.GroupVersionResource{}, errors.New("get kind failed"), nil
-	}
-	groupKind := schema.GroupKind{Group: s.p.GetGroupName(), Kind: kind}
-	res.Object["apiVersion"] = s.p.GetGroupName() + "/v1"
 
 	metaData := map[string]string{
 		"name": s.p.GeneMetaName(),
 	}
 	res.Object["metadata"] = metaData
 
-	mapping, err := client.GetrestMapper().RESTMapping(groupKind, "v1")
+	mapping, err := client.GetrestMapper().RESTMapping(k.GroupKind(), k.Version)
 	if err != nil {
 		return schema.GroupVersionResource{}, err, nil
 	}

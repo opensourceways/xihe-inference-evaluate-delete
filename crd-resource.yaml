@@ -1,12 +1,23 @@
-apiVersion:
+apiVersion: code.zjm.com/v1
 kind: CodeServer
 metadata:
-  name:
+  name: codeserver-sample
 spec:
   image: ccr.ccs.tencentyun.com/kugo/demo:v5
-
-
-
-
+  name: test-server
+  envs:
+    - name: DB_USER
+      valueFrom:
+        secretKeyRef:
+          key: db-user
+          name: test-secret
+    - name: DB_PWD
+      valueFrom:
+        secretKeyRef:
+          key: db-password
+          name: test-secret
+  recycleAfterSeconds: 60
+  inactiveAfterSeconds: 0
+  add: false
 
 
