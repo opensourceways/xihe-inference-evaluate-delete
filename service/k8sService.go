@@ -129,10 +129,10 @@ func (s K8sService) getResource() (schema.GroupVersionResource, error, *unstruct
 		return schema.GroupVersionResource{}, err, nil
 	}
 
-	metaData := map[string]string{
-		"name": s.p.GeneMetaName(),
-	}
-	res.Object["metadata"] = metaData
+	//metaData := map[string]string{
+	//	"name": s.p.GeneMetaName(),
+	//}
+	//res.Object["metadata"] = metaData
 
 	mapping, err := client.GetrestMapper().RESTMapping(k.GroupKind(), k.Version)
 	if err != nil {
