@@ -59,5 +59,5 @@ func (i Inference) GetGroupName() string {
 }
 
 func (i Inference) GeneMetaName() string {
-	return fmt.Sprintf("inference_%s_%s", i.Info.ProjectName, i.Info.LastCommit)
+	return fmt.Sprintf("inference-%s-%s", i.Info.ProjectName, i.Info.LastCommit)
 }
