@@ -9,7 +9,7 @@ import (
 )
 
 type Inference struct {
-	Info InferenceInfo
+	Info *InferenceInfo
 }
 
 type InferenceInfo struct {
@@ -21,7 +21,9 @@ type InferenceInfo struct {
 }
 
 func NewInferControl() *Inference {
-	return new(Inference)
+	return &Inference{
+		Info: new(InferenceInfo),
+	}
 }
 
 func (i Inference) Create(c *gin.Context) {
