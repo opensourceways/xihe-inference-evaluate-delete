@@ -1,0 +1,12 @@
+apiVersion:
+kind: CodeServer
+metadata:
+  name:
+spec:
+  image: ccr.ccs.tencentyun.com/kugo/demo:v5
+
+
+
+
+
+
