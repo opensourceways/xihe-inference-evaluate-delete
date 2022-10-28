@@ -27,7 +27,7 @@ func NewInferControl() *Inference {
 }
 
 func (i *Inference) Get(c *gin.Context) {
-	name := c.Query("name")
+	name := c.PostForm("name")
 	if data, err := service.NewK8sService(i).Get(name); err != nil {
 		tools.Failure(c, err)
 	} else {
