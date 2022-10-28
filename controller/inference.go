@@ -26,7 +26,7 @@ func NewInferControl() *Inference {
 	}
 }
 
-func (i Inference) Create(c *gin.Context) {
+func (i *Inference) Create(c *gin.Context) {
 	i.initParams(c)
 	if data, err := service.NewK8sService(i).Create(); err != nil {
 		tools.Failure(c, err)
@@ -35,7 +35,7 @@ func (i Inference) Create(c *gin.Context) {
 	}
 }
 
-func (i Inference) ExtendExpiry(c *gin.Context) {
+func (i *Inference) ExtendExpiry(c *gin.Context) {
 	i.initParams(c)
 	expiry := c.PostForm("expiry")
 	expiryInt, _ := strconv.Atoi(expiry)
@@ -46,7 +46,7 @@ func (i Inference) ExtendExpiry(c *gin.Context) {
 	}
 }
 
-func (i Inference) initParams(c *gin.Context) {
+func (i *Inference) initParams(c *gin.Context) {
 	i.Info.Id = c.PostForm("id")
 	i.Info.ProjectId = c.PostForm("project_id")
 	i.Info.LastCommit = c.PostForm("last_commit")
@@ -54,6 +54,6 @@ func (i Inference) initParams(c *gin.Context) {
 	i.Info.ProjectOwner = c.PostForm("project_owner")
 }
 
-func (i Inference) GeneMetaName() string {
+func (i *Inference) GeneMetaName() string {
 	return fmt.Sprintf("inference-%s-%s", i.Info.ProjectName, i.Info.LastCommit)
 }
