@@ -10,7 +10,7 @@ func Route(r *gin.Engine) {
 	{
 		gi.POST("create", controller.NewInferControl().Create)
 		gi.POST("extend_expiry", controller.NewInferControl().ExtendExpiry)
-		gi.POST("get", controller.NewInferControl().Get)
+		gi.GET("get", controller.NewInferControl().Get)
 	}
 
 }

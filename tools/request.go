@@ -15,6 +15,14 @@ func Failure(c *gin.Context, err error) {
 	c.JSON(http.StatusOK, HandleBadReturn(err, nil))
 }
 
+func Response(c *gin.Context, data interface{}, err error) {
+	if err != nil {
+		Failure(c, err)
+	} else {
+		Success(c, data)
+	}
+}
+
 func QueryFailure(c *gin.Context, err error) {
 	c.JSON(http.StatusOK, QueryHandleBadReturn(err, nil))
 }

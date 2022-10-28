@@ -27,32 +27,23 @@ func NewInferControl() *Inference {
 }
 
 func (i *Inference) Get(c *gin.Context) {
-	name := c.PostForm("name")
-	if data, err := service.NewK8sService(i).Get(name); err != nil {
-		tools.Failure(c, err)
-	} else {
-		tools.Success(c, data)
-	}
+	name := c.Query("name")
+	data, err := service.NewK8sService(i).Get(name)
+	tools.Response(c, data, err)
 }
 
 func (i *Inference) Create(c *gin.Context) {
 	i.initParams(c)
-	if data, err := service.NewK8sService(i).Create(); err != nil {
-		tools.Failure(c, err)
-	} else {
-		tools.Success(c, data)
-	}
+	data, err := service.NewK8sService(i).Create()
+	tools.Response(c, data, err)
 }
 
 func (i *Inference) ExtendExpiry(c *gin.Context) {
 	i.initParams(c)
 	expiry := c.PostForm("expiry")
 	expiryInt, _ := strconv.Atoi(expiry)
-	if data, err := service.NewK8sService(i).Update(expiryInt); err != nil {
-		tools.Failure(c, err)
-	} else {
-		tools.Success(c, data)
-	}
+	data, err := service.NewK8sService(i).Update(expiryInt)
+	tools.Response(c, data, err)
 }
 
 func (i *Inference) initParams(c *gin.Context) {
