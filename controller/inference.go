@@ -47,6 +47,8 @@ func (i *Inference) ExtendExpiry(c *gin.Context) {
 }
 
 func (i *Inference) initParams(c *gin.Context) {
+
+	// todo 入参方式待定
 	i.Info.Id = c.PostForm("id")
 	i.Info.ProjectId = c.PostForm("project_id")
 	i.Info.LastCommit = c.PostForm("last_commit")
