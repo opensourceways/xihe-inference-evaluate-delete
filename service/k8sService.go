@@ -3,7 +3,6 @@ package service
 import (
 	"bytes"
 	"container_manager/client"
-	"container_manager/tools"
 	"context"
 	"errors"
 	"github.com/qinsheng99/crdcode/api/v1"
@@ -59,7 +58,7 @@ func (s K8sService) Create() (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	rls := s.validation(create, dr, res)
+	rls := s.newValidation(create, dr, res)
 	if rls.ServerReadyFlag && !rls.ServerRecycledFlag && rls.ServerBoundFlag && !rls.ServerInactiveFlag {
 		return rls.InstanceEndpoint, nil
 	}
@@ -154,124 +153,6 @@ func (s K8sService) resource() (kind *schema.GroupVersionKind, err error, _ *uns
 		return nil, err, nil
 	}
 	return kind, nil, obj
-}
-
-func (s *K8sService) validation(code *unstructured.Unstructured, dr dynamic.ResourceInterface, object *unstructured.Unstructured) ResListStatus {
-	var err error
-	var num int
-try:
-	rls := ResListStatus{}
-	code, err = dr.Get(context.TODO(), code.GetName(), metav1.GetOptions{})
-	if err != nil {
-		num++
-		if num >= 10 {
-			err = dr.Delete(context.TODO(), code.GetName(), metav1.DeleteOptions{})
-			rls.ServerErroredFlag = true
-		}
-		goto try
-	} else {
-		if object.GetAPIVersion() == code.GetAPIVersion() {
-			metadata, ok := tools.ParsingMap(code.Object, "metadata")
-			if !ok {
-				rls.ServerErroredFlag = true
-				return rls
-			}
-
-			name, nameok := tools.ParsingMapStr(metadata, "name")
-			if !nameok {
-				rls.ServerErroredFlag = true
-				return rls
-			}
-
-			if name != object.GetName() {
-				rls.ServerErroredFlag = true
-				return rls
-			}
-
-			status, statusok := tools.ParsingMap(code.Object, "status")
-			if !statusok {
-				return rls
-			}
-
-			conditions, conditionok := tools.ParsingMapSlice(status, "conditions")
-			if !conditionok {
-				return rls
-			}
-
-			for _, condition := range conditions {
-				cond := condition.(map[string]interface{})
-				typ, typeok := tools.ParsingMapStr(cond, "type")
-				if !typeok {
-					continue
-				}
-
-				switch typ {
-				case "ServerCreated": //means the code server has been accepted by the system.
-					create, createok := tools.ParsingMapStr(cond, "status")
-					if createok && create == "True" {
-						rls.ServerCreatedFlag = true
-					}
-					lastTransitionTime, createtimeok := tools.ParsingMapStr(cond, "lastTransitionTime")
-					if createtimeok {
-						rls.ServerCreatedTime = lastTransitionTime
-					}
-				case "ServerReady": //means the code server has been ready for usage.
-					ready, readyok := tools.ParsingMapStr(cond, "status")
-					if readyok && ready == "True" {
-						rls.ServerReadyFlag = true
-					}
-					lastTransitionTime, timeok := tools.ParsingMapStr(cond, "lastTransitionTime")
-					if timeok {
-						rls.ServerReadyTime = lastTransitionTime
-					}
-					message, messageok := tools.ParsingMap(cond, "message")
-					if messageok {
-						instanceEndpoint, pointok := tools.ParsingMapStr(message, "instanceEndpoint")
-						if pointok {
-							rls.InstanceEndpoint = instanceEndpoint
-						}
-					}
-				case "ServerBound": //means the code server has been bound to user.
-					bound, boundok := tools.ParsingMapStr(cond, "status")
-					if boundok && bound == "True" {
-						rls.ServerBoundFlag = true
-					}
-					lastTransitionTime, boundtimeok := tools.ParsingMapStr(cond, "lastTransitionTime")
-					if boundtimeok {
-						rls.ServerBoundTime = lastTransitionTime
-					}
-				case "ServerRecycled": //means the code server has been recycled totally.
-					recycled, recycleok := tools.ParsingMapStr(cond, "status")
-					if recycleok && recycled == "True" {
-						rls.ServerRecycledFlag = true
-					}
-					lastTransitionTime, recycletimeok := tools.ParsingMapStr(cond, "lastTransitionTime")
-					if recycletimeok {
-						rls.ServerRecycledTime = lastTransitionTime
-					}
-				case "ServerInactive": //means the code server will be marked inactive if `InactiveAfterSeconds` elapsed
-					inactive, inactiveok := tools.ParsingMapStr(cond, "status")
-					if inactiveok && inactive == "True" {
-						rls.ServerInactiveFlag = true
-					}
-					lastTransitionTime, inactivetimeok := tools.ParsingMapStr(cond, "lastTransitionTime")
-					if inactivetimeok {
-						rls.ServerInactiveTime = lastTransitionTime
-					}
-				case "ServerErrored": //means failed to reconcile code server.
-					bound, errorok := tools.ParsingMapStr(cond, "status")
-					if errorok && bound == "True" {
-						rls.ServerErroredFlag = true
-					}
-					lastTransitionTime, errortimeok := tools.ParsingMapStr(cond, "lastTransitionTime")
-					if errortimeok {
-						rls.ServerErroredTime = lastTransitionTime
-					}
-				}
-			}
-		}
-	}
-	return rls
 }
 
 func (s K8sService) newValidation(code *unstructured.Unstructured, dr dynamic.ResourceInterface, object *unstructured.Unstructured) ResListStatus {
