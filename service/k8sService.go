@@ -101,8 +101,12 @@ func (s *K8sService) Create() (interface{}, error) {
 		return nil, err
 	}
 
-	dr := cli.Resource(resource).Namespace("default")
+	metaData := map[string]interface{}{
+		"name": s.p.GeneMetaName(),
+	}
+	res.Object["metadata"] = metaData
 
+	dr := cli.Resource(resource).Namespace("default")
 	create, err := dr.Create(context.TODO(), res, metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
@@ -176,11 +180,6 @@ func (s *K8sService) GetResource() (schema.GroupVersionResource, error, *unstruc
 	if err != nil {
 		return schema.GroupVersionResource{}, err, nil
 	}
-
-	metaData := map[string]interface{}{
-		"name": s.p.GeneMetaName(),
-	}
-	res.Object["metadata"] = metaData
 
 	mapping, err := client.GetrestMapper().RESTMapping(k.GroupKind(), k.Version)
 	if err != nil {
