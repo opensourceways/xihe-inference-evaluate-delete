@@ -45,7 +45,34 @@ func NewK8sService(p ParamInter) *K8sService {
 	return &K8sService{p: p}
 }
 
-func (s K8sService) Create() (interface{}, error) {
+func (s *K8sService) Get(name string) (interface{}, error) {
+	cli := client.GetDyna()
+	resource, err, _ := s.getResource()
+	if err != nil {
+		return nil, err
+	}
+
+	get, err := cli.Resource(resource).Namespace("default").Get(context.TODO(), name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	marshal, err := json.Marshal(get.Object)
+	if err != nil {
+		return nil, err
+	}
+
+	var res v1.CodeServer
+	err = json.Unmarshal(marshal, &res)
+	if err != nil {
+		return nil, err
+
+	}
+	return res, nil
+
+}
+
+func (s *K8sService) Create() (interface{}, error) {
 	cli := client.GetDyna()
 	resource, err, res := s.getResource()
 	if err != nil {
@@ -95,7 +122,7 @@ func (s K8sService) Create() (interface{}, error) {
 
 }
 
-func (s K8sService) Update(expiry int) (interface{}, error) {
+func (s *K8sService) Update(expiry int) (interface{}, error) {
 	cli := client.GetDyna()
 	resource, err, _ := s.getResource()
 	if err != nil {
@@ -122,7 +149,7 @@ func (s K8sService) Update(expiry int) (interface{}, error) {
 	return nil, nil
 }
 
-func (s K8sService) getResource() (schema.GroupVersionResource, error, *unstructured.Unstructured) {
+func (s *K8sService) getResource() (schema.GroupVersionResource, error, *unstructured.Unstructured) {
 	k, err, res := s.resource()
 	if err != nil {
 		return schema.GroupVersionResource{}, err, nil
@@ -141,7 +168,7 @@ func (s K8sService) getResource() (schema.GroupVersionResource, error, *unstruct
 	return mapping.Resource, nil, res
 }
 
-func (s K8sService) resource() (kind *schema.GroupVersionKind, err error, _ *unstructured.Unstructured) {
+func (s *K8sService) resource() (kind *schema.GroupVersionKind, err error, _ *unstructured.Unstructured) {
 	var yamldata []byte
 	yamldata, err = ioutil.ReadFile("crd-resource.yaml")
 	if err != nil {
@@ -155,7 +182,7 @@ func (s K8sService) resource() (kind *schema.GroupVersionKind, err error, _ *uns
 	return kind, nil, obj
 }
 
-func (s K8sService) newValidation(code *unstructured.Unstructured, dr dynamic.ResourceInterface, object *unstructured.Unstructured) ResListStatus {
+func (s *K8sService) newValidation(code *unstructured.Unstructured, dr dynamic.ResourceInterface, object *unstructured.Unstructured) ResListStatus {
 	var (
 		err error
 		num int

@@ -26,6 +26,15 @@ func NewInferControl() *Inference {
 	}
 }
 
+func (i *Inference) Get(c *gin.Context) {
+	name := c.Param("name")
+	if data, err := service.NewK8sService(i).Get(name); err != nil {
+		tools.Failure(c, err)
+	} else {
+		tools.Success(c, data)
+	}
+}
+
 func (i *Inference) Create(c *gin.Context) {
 	i.initParams(c)
 	if data, err := service.NewK8sService(i).Create(); err != nil {
