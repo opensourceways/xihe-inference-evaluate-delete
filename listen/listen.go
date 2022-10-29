@@ -53,8 +53,8 @@ type StatusDetail struct {
 }
 
 type InferenceRequest struct {
-	controller.InferenceInfo
-	Status StatusDetail
+	InferenceInfo controller.InferenceInfo `json:"inference_info"`
+	Status        StatusDetail             `json:"status"`
 }
 
 func NewListen(res *kubernetes.Clientset, c *rest.Config, dym dynamic.Interface, resource schema.GroupVersionResource) ListenInter {
@@ -108,27 +108,31 @@ func (l *Listen) dispatcher(res v1.CodeServer) {
 	}()
 
 	status := l.transferStatus(res)
+	labelsBytes, err := json.Marshal(res.ObjectMeta.Labels)
+	if err != nil {
+		log.Println("dispatcher marshal error:", err.Error())
+		return
+	}
 	switch res.Labels["type"] {
 	case controller.MetaNameInference:
-
+		l.HandleInference(labelsBytes, status)
 	}
 
-	log.Println("data:", status)
 }
 
-func (l *Listen) transferStatus(res v1.CodeServer) (req StatusDetail) {
+func (l *Listen) transferStatus(res v1.CodeServer) (status StatusDetail) {
 	var endPoint string
 	for _, condition := range res.Status.Conditions {
 		if _, ok := serverUnusable[condition.Type]; ok {
 			if condition.Status == corev1.ConditionTrue {
-				req.ErrorMsg = condition.Reason
+				status.ErrorMsg = condition.Reason
 				return
 			}
 		}
 
 		if _, ok := serverUsable[condition.Type]; ok {
 			if condition.Status == corev1.ConditionFalse {
-				req.ErrorMsg = condition.Reason
+				status.ErrorMsg = condition.Reason
 				return
 			}
 		}
@@ -136,9 +140,22 @@ func (l *Listen) transferStatus(res v1.CodeServer) (req StatusDetail) {
 			endPoint = condition.Message["instanceEndpoint"]
 		}
 	}
-	req.IsUsable = true
-	req.AccessUrl = endPoint
+	status.IsUsable = true
+	status.AccessUrl = endPoint
 	return
+}
+
+func (l *Listen) HandleInference(labels []byte, status StatusDetail) {
+	var inferenceInfo controller.InferenceInfo
+	if err := json.Unmarshal(labels, &inferenceInfo); err != nil {
+		log.Println("handle inference unmarshal error:", err.Error())
+	}
+	RequestData := InferenceRequest{
+		InferenceInfo: inferenceInfo,
+		Status:        status,
+	}
+
+	log.Println(RequestData)
 }
 
 func (l *Listen) Delete(obj interface{}) {

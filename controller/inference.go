@@ -5,6 +5,7 @@ import (
 	"container_manager/tools"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"k8s.io/apimachinery/pkg/util/json"
 )
 
 const MetaNameInference = "inference"
@@ -57,11 +58,8 @@ func (i *Inference) GeneMetaName() string {
 
 func (i *Inference) GeneLabels() map[string]string {
 	m := make(map[string]string)
-	m["id"] = i.Info.Id
-	m["project_id"] = i.Info.ProjectId
-	m["last_commit"] = i.Info.LastCommit
-	m["project_name"] = i.Info.ProjectName
-	m["project_owner"] = i.Info.ProjectOwner
+	b, _ := json.Marshal(i.Info)
+	_ = json.Unmarshal(b, m)
 	m["type"] = MetaNameInference
 	return m
 }
