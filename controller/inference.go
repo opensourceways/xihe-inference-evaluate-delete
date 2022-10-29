@@ -37,17 +37,21 @@ func (i *Inference) Get(c *gin.Context) {
 }
 
 func (i *Inference) Create(c *gin.Context) {
-	if err := c.ShouldBindJSON(i.Info); err != nil {
+	var t InferenceInfo
+	if err := c.ShouldBindJSON(&t); err != nil {
 		tools.Failure(c, err)
 	}
+	i.Info = &t
 	data, err := service.NewK8sService().Create(i)
 	tools.Response(c, data, err)
 }
 
 func (i *Inference) ExtendExpiry(c *gin.Context) {
-	if err := c.ShouldBindJSON(i.Info); err != nil {
+	var t InferenceInfo
+	if err := c.ShouldBindJSON(&t); err != nil {
 		tools.Failure(c, err)
 	}
+	i.Info = &t
 
 	data, err := service.NewK8sService().Update(i, i.Info.Expiry)
 	tools.Response(c, data, err)
