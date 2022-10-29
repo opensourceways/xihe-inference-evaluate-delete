@@ -14,7 +14,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	s := new(service.K8sService)
+	s := service.NewK8sService()
 	resource, err, _ := s.GetResource()
 	if err != nil {
 		log.Fatalln(err)

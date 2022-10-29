@@ -63,30 +63,33 @@ func (l *Listen) Update(oldObj, newObj interface{}) {
 
 	bys, err := json.Marshal(newObj)
 	if err != nil {
+		log.Println("marshal error:", err.Error())
 		return
 	}
 	err = json.Unmarshal(bys, &res)
 	if err != nil {
+		log.Println("unmarshal error:", err.Error())
 		return
 	}
-	log.Println(res)
+	log.Printf("%+v", res)
+	//go l.dispatcher(res)
+}
+
+func (l *Listen) dispatcher(data v1.CodeServer) {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Println("dispatcher panic:", err)
+		}
+	}()
 
 }
 
 func (l *Listen) Delete(obj interface{}) {
-	key, err := cache.MetaNamespaceKeyFunc(obj)
-	if err != nil {
-		log.Println("delete func err: ", err.Error())
-	}
-	log.Println("delete func key: ", key)
+
 }
 
 func (l *Listen) Add(obj interface{}) {
-	key, err := cache.MetaNamespaceKeyFunc(obj)
-	if err != nil {
-		log.Println("add func err: ", err.Error())
-	}
-	log.Println("add func key: ", key)
+
 }
 
 func (l *Listen) crdConfig() cache.SharedIndexInformer {

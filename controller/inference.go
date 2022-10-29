@@ -8,6 +8,8 @@ import (
 	"strconv"
 )
 
+const metaNameInference = "inference"
+
 type Inference struct {
 	Info *InferenceInfo
 }
@@ -28,13 +30,13 @@ func NewInferControl() *Inference {
 
 func (i *Inference) Get(c *gin.Context) {
 	name := c.Query("name")
-	data, err := service.NewK8sService(i).Get(name)
+	data, err := service.NewK8sService().Get(name)
 	tools.Response(c, data, err)
 }
 
 func (i *Inference) Create(c *gin.Context) {
 	i.initParams(c)
-	data, err := service.NewK8sService(i).Create()
+	data, err := service.NewK8sService().Create(i)
 	tools.Response(c, data, err)
 }
 
@@ -42,7 +44,7 @@ func (i *Inference) ExtendExpiry(c *gin.Context) {
 	i.initParams(c)
 	expiry := c.PostForm("expiry")
 	expiryInt, _ := strconv.Atoi(expiry)
-	data, err := service.NewK8sService(i).Update(expiryInt)
+	data, err := service.NewK8sService().Update(i, expiryInt)
 	tools.Response(c, data, err)
 }
 
@@ -57,5 +59,16 @@ func (i *Inference) initParams(c *gin.Context) {
 }
 
 func (i *Inference) GeneMetaName() string {
-	return fmt.Sprintf("inference-%s-%s-%s-%s", i.Info.Id, i.Info.ProjectId, i.Info.ProjectName, i.Info.LastCommit)
+	return fmt.Sprintf("%s-%s", metaNameInference, i.Info.LastCommit)
+}
+
+func (i *Inference) GeneLabels() map[string]string {
+	m := make(map[string]string)
+	m["id"] = i.Info.Id
+	m["project_id"] = i.Info.ProjectId
+	m["last_commit"] = i.Info.LastCommit
+	m["project_name"] = i.Info.ProjectName
+	m["project_owner"] = i.Info.ProjectOwner
+	m["type"] = metaNameInference
+	return m
 }

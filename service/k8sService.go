@@ -30,16 +30,28 @@ type ResListStatus struct {
 	InstanceEndpoint   string
 }
 
-type ParamInter interface {
+type MetaNameInter interface {
 	GeneMetaName() string
 }
 
-type K8sService struct {
-	p ParamInter
+type LabelsInter interface {
+	GeneLabels() map[string]string
 }
 
-func NewK8sService(p ParamInter) *K8sService {
-	return &K8sService{p: p}
+type CreateInter interface {
+	MetaNameInter
+	LabelsInter
+}
+
+type UpdateInter interface {
+	MetaNameInter
+}
+
+type K8sService struct {
+}
+
+func NewK8sService() *K8sService {
+	return new(K8sService)
 }
 
 func (s *K8sService) Get(name string) (interface{}, error) {
@@ -69,31 +81,31 @@ func (s *K8sService) Get(name string) (interface{}, error) {
 
 }
 
-func (s *K8sService) Create() (interface{}, error) {
+func (s *K8sService) Create(cd CreateInter) (interface{}, error) {
 	cli := client.GetDyna()
 	resource, err, res := s.GetResource()
 	if err != nil {
 		return nil, err
 	}
 
-	metaData := map[string]interface{}{
-		"name": s.p.GeneMetaName(),
+	res.Object["metadata"] = map[string]interface{}{
+		"name":   cd.GeneMetaName(),
+		"labels": cd.GeneLabels(),
 	}
-	res.Object["metadata"] = metaData
 
 	dr := cli.Resource(resource).Namespace("default")
 	create, err := dr.Create(context.TODO(), res, metav1.CreateOptions{})
 	return create, err
 }
 
-func (s *K8sService) Update(expiry int) (interface{}, error) {
+func (s *K8sService) Update(ud UpdateInter, expiry int) (interface{}, error) {
 	cli := client.GetDyna()
 	resource, err, _ := s.GetResource()
 	if err != nil {
 		return nil, err
 	}
 
-	get, err := cli.Resource(resource).Namespace("default").Get(context.TODO(), s.p.GeneMetaName(), metav1.GetOptions{})
+	get, err := cli.Resource(resource).Namespace("default").Get(context.TODO(), ud.GeneMetaName(), metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
