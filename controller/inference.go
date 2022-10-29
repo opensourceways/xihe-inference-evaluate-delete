@@ -5,7 +5,6 @@ import (
 	"container_manager/tools"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"strconv"
 )
 
 const MetaNameInference = "inference"
@@ -20,6 +19,7 @@ type InferenceInfo struct {
 	LastCommit   string `json:"last_commit"`
 	ProjectName  string `json:"project_name"`
 	ProjectOwner string `json:"project_owner"`
+	Expiry       int    `json:"expiry,omitempty"`
 }
 
 func NewInferControl() *Inference {
@@ -35,27 +35,20 @@ func (i *Inference) Get(c *gin.Context) {
 }
 
 func (i *Inference) Create(c *gin.Context) {
-	i.initParams(c)
+	if err := c.ShouldBindJSON(i.Info); err != nil {
+		tools.Failure(c, err)
+	}
 	data, err := service.NewK8sService().Create(i)
 	tools.Response(c, data, err)
 }
 
 func (i *Inference) ExtendExpiry(c *gin.Context) {
-	i.initParams(c)
-	expiry := c.PostForm("expiry")
-	expiryInt, _ := strconv.Atoi(expiry)
-	data, err := service.NewK8sService().Update(i, expiryInt)
+	if err := c.ShouldBindJSON(i.Info); err != nil {
+		tools.Failure(c, err)
+	}
+
+	data, err := service.NewK8sService().Update(i, i.Info.Expiry)
 	tools.Response(c, data, err)
-}
-
-func (i *Inference) initParams(c *gin.Context) {
-
-	// todo 入参方式待定
-	i.Info.Id = c.PostForm("id")
-	i.Info.ProjectId = c.PostForm("project_id")
-	i.Info.LastCommit = c.PostForm("last_commit")
-	i.Info.ProjectName = c.PostForm("project_name")
-	i.Info.ProjectOwner = c.PostForm("project_owner")
 }
 
 func (i *Inference) GeneMetaName() string {

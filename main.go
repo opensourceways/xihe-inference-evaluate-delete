@@ -2,6 +2,7 @@ package main
 
 import (
 	"container_manager/client"
+	"container_manager/listen"
 	"container_manager/route"
 	"container_manager/service"
 	"github.com/gin-gonic/gin"
@@ -20,8 +21,8 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	listen := service.NewListen(client.GetClient(), client.GetK8sConfig(), client.GetDyna(), resource)
-	go listen.ListenResource()
+	l := listen.NewListen(client.GetClient(), client.GetK8sConfig(), client.GetDyna(), resource)
+	go l.ListenResource()
 
 	r := gin.Default()
 	route.Route(r)
