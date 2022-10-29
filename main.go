@@ -21,7 +21,10 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	l := listen.NewListen(client.GetClient(), client.GetK8sConfig(), client.GetDyna(), resource)
+	l, err := listen.NewListen(client.GetClient(), client.GetK8sConfig(), client.GetDyna(), resource)
+	if err != nil {
+		log.Fatalln(err)
+	}
 	go l.ListenResource()
 
 	r := gin.Default()

@@ -44,6 +44,7 @@ type Listen struct {
 	config   *rest.Config
 	dym      dynamic.Interface
 	resource schema.GroupVersionResource
+	nConfig  *Config
 }
 
 type StatusDetail struct {
@@ -57,8 +58,12 @@ type InferenceRequest struct {
 	Status        StatusDetail             `json:"status"`
 }
 
-func NewListen(res *kubernetes.Clientset, c *rest.Config, dym dynamic.Interface, resource schema.GroupVersionResource) ListenInter {
-	return &Listen{res: res, wg: &sync.WaitGroup{}, mux: &sync.Mutex{}, config: c, dym: dym, resource: resource}
+func NewListen(res *kubernetes.Clientset, c *rest.Config, dym dynamic.Interface, resource schema.GroupVersionResource) (ListenInter, error) {
+	nConfig := new(Config)
+	if err := loadConfig(nConfig); err != nil {
+		return nil, err
+	}
+	return &Listen{res: res, wg: &sync.WaitGroup{}, mux: &sync.Mutex{}, config: c, dym: dym, resource: resource, nConfig: nConfig}, nil
 }
 
 func (l *Listen) ListenResource() {
@@ -156,6 +161,7 @@ func (l *Listen) HandleInference(labels []byte, status StatusDetail) {
 	}
 
 	log.Println(RequestData)
+	log.Println(l.nConfig.Inference.NotifyUrl)
 }
 
 func (l *Listen) Delete(obj interface{}) {
