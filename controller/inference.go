@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"k8s.io/apimachinery/pkg/util/json"
+	"log"
 )
 
 const MetaNameInference = "inference"
@@ -58,8 +59,15 @@ func (i *Inference) GeneMetaName() string {
 
 func (i *Inference) GeneLabels() map[string]string {
 	m := make(map[string]string)
-	b, _ := json.Marshal(i.Info)
-	_ = json.Unmarshal(b, m)
+	b, err := json.Marshal(i.Info)
+	if err != nil {
+		log.Println(err)
+	}
+	err = json.Unmarshal(b, m)
+	if err != nil {
+		log.Println(err)
+	}
 	m["type"] = MetaNameInference
+	log.Println(m)
 	return m
 }
