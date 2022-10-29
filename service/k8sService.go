@@ -1,12 +1,9 @@
 package service
 
 import (
-	"bytes"
 	"container_manager/client"
 	"context"
-	"errors"
 	"github.com/qinsheng99/crdcode/api/v1"
-	"io"
 	"io/ioutil"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -86,44 +83,7 @@ func (s *K8sService) Create() (interface{}, error) {
 
 	dr := cli.Resource(resource).Namespace("default")
 	create, err := dr.Create(context.TODO(), res, metav1.CreateOptions{})
-	if err != nil {
-		return nil, err
-	}
-	rls := s.newValidation(create, dr, res)
-	if rls.ServerReadyFlag && !rls.ServerRecycledFlag && rls.ServerBoundFlag && !rls.ServerInactiveFlag {
-		return rls.InstanceEndpoint, nil
-	}
-
-	if rls.ServerRecycledFlag {
-		return nil, errors.New("overdue")
-	}
-
-	if rls.ServerInactiveFlag || rls.ServerErroredFlag {
-		label := "app=" + create.GetName()
-		podList, err := client.GetClient().CoreV1().Pods(create.GetNamespace()).List(context.TODO(), metav1.ListOptions{LabelSelector: label})
-		if err != nil {
-			return nil, err
-		}
-		var a = new(int64)
-		*a = 3
-		pod := podList.Items[0]
-		logs := client.GetClient().CoreV1().Pods(pod.GetNamespace()).GetLogs(pod.GetName(), &corev1.PodLogOptions{TailLines: a})
-		stream, err := logs.Stream(context.TODO())
-		if err != nil {
-			return nil, err
-		}
-
-		var buf = new(bytes.Buffer)
-		_, err = io.Copy(buf, stream)
-		if err != nil {
-			return nil, err
-		}
-
-		return buf.String(), nil
-
-	}
-	return create, nil
-
+	return create, err
 }
 
 func (s *K8sService) Update(expiry int) (interface{}, error) {
@@ -146,11 +106,7 @@ func (s *K8sService) Update(expiry int) (interface{}, error) {
 	}
 
 	_, err = cli.Resource(resource).Namespace("default").Update(context.TODO(), get, metav1.UpdateOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	return nil, nil
+	return nil, err
 }
 
 func (s *K8sService) GetResource() (schema.GroupVersionResource, error, *unstructured.Unstructured) {

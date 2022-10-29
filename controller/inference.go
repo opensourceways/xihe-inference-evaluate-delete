@@ -57,5 +57,5 @@ func (i *Inference) initParams(c *gin.Context) {
 }
 
 func (i *Inference) GeneMetaName() string {
-	return fmt.Sprintf("inference-%s-%s", i.Info.ProjectName, i.Info.LastCommit)
+	return fmt.Sprintf("inference-%s-%s-%s-%s", i.Info.Id, i.Info.ProjectId, i.Info.ProjectName, i.Info.LastCommit)
 }

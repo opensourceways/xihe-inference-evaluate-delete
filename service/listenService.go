@@ -1,12 +1,13 @@
 package service
 
 import (
-	"container_manager/tools"
 	"context"
+	v1 "github.com/qinsheng99/crdcode/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
@@ -54,18 +55,22 @@ func (l *Listen) ListenResource() {
 		return
 	}
 
-	//l.infor = infor
-
 	<-stopCh
 }
 
 func (l *Listen) Update(oldObj, newObj interface{}) {
-	key, err := cache.MetaNamespaceKeyFunc(newObj)
+	var res v1.CodeServer
+
+	bys, err := json.Marshal(newObj)
 	if err != nil {
-		log.Println("update func err: ", err.Error())
+		return
 	}
-	log.Println("update func key: ", key)
-	go l.print(key)
+	err = json.Unmarshal(bys, &res)
+	if err != nil {
+		return
+	}
+	log.Println(res)
+
 }
 
 func (l *Listen) Delete(obj interface{}) {
@@ -98,47 +103,4 @@ func (l *Listen) crdConfig() cache.SharedIndexInformer {
 		0,
 		cache.Indexers{},
 	)
-}
-
-func (l *Listen) print(key string) {
-	time.Sleep(3 * time.Second)
-	namespace, name, err := cache.SplitMetaNamespaceKey(key)
-	if err != nil {
-		log.Println("key err: ", err.Error())
-		return
-	}
-	var n int64
-	var data *unstructured.Unstructured
-	for {
-		data, err = l.dym.Resource(l.resource).Namespace(namespace).Get(context.TODO(), name, metav1.GetOptions{})
-		if err != nil {
-			n++
-			time.Sleep(500 * time.Millisecond)
-		} else {
-			break
-		}
-		if n == 10 {
-			log.Println("get crd resource err: ", err.Error())
-			return
-		}
-	}
-	delete(data.Object, "metadata")
-
-	status, statusok := tools.ParsingMap(data.Object, "status")
-	if !statusok {
-		return
-	}
-
-	conditions, conditionok := tools.ParsingMapSlice(status, "conditions")
-	if !conditionok {
-		return
-	}
-
-	for _, condition := range conditions {
-		cond := condition.(map[string]interface{})
-		log.Println(tools.ParsingMapStr(cond, "type"))
-		log.Println(tools.ParsingMapStr(cond, "status"))
-		log.Println(tools.ParsingMapStr(cond, "reason"))
-		log.Println("------")
-	}
 }
