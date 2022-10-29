@@ -1,8 +1,10 @@
 package listen
 
 import (
+	"bytes"
 	"container_manager/controller"
 	"context"
+	"github.com/opensourceways/community-robot-lib/utils"
 	v1 "github.com/qinsheng99/crdcode/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,6 +18,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"log"
+	"net/http"
 	"sync"
 	"time"
 )
@@ -160,8 +163,24 @@ func (l *Listen) HandleInference(labels []byte, status StatusDetail) {
 		Status:        status,
 	}
 
-	log.Println(RequestData)
-	log.Println(l.nConfig.Inference.NotifyUrl)
+	payload, err := utils.JsonMarshal(RequestData)
+	if err != nil {
+		log.Println("payload marshal fail:", err.Error())
+	}
+
+	url := l.nConfig.Inference.NotifyUrl
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(payload))
+	if err != nil {
+		log.Println("new request error:", err.Error())
+	}
+	var result interface{}
+	cli := utils.NewHttpClient(3)
+	code, err := cli.ForwardTo(req, &result)
+	if err != nil {
+		log.Println("response error:", err.Error())
+	}
+
+	log.Println("response code :", code)
 }
 
 func (l *Listen) Delete(obj interface{}) {
