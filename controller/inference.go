@@ -8,18 +8,18 @@ import (
 	"strconv"
 )
 
-const metaNameInference = "inference"
+const MetaNameInference = "inference"
 
 type Inference struct {
 	Info *InferenceInfo
 }
 
 type InferenceInfo struct {
-	Id           string
-	ProjectId    string
-	LastCommit   string
-	ProjectName  string
-	ProjectOwner string
+	Id           string `json:"id"`
+	ProjectId    string `json:"project_id"`
+	LastCommit   string `json:"last_commit"`
+	ProjectName  string `json:"project_name"`
+	ProjectOwner string `json:"project_owner"`
 }
 
 func NewInferControl() *Inference {
@@ -59,7 +59,7 @@ func (i *Inference) initParams(c *gin.Context) {
 }
 
 func (i *Inference) GeneMetaName() string {
-	return fmt.Sprintf("%s-%s", metaNameInference, i.Info.LastCommit)
+	return fmt.Sprintf("%s-%s", MetaNameInference, i.Info.LastCommit)
 }
 
 func (i *Inference) GeneLabels() map[string]string {
@@ -69,6 +69,6 @@ func (i *Inference) GeneLabels() map[string]string {
 	m["last_commit"] = i.Info.LastCommit
 	m["project_name"] = i.Info.ProjectName
 	m["project_owner"] = i.Info.ProjectOwner
-	m["type"] = metaNameInference
+	m["type"] = MetaNameInference
 	return m
 }

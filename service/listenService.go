@@ -1,6 +1,7 @@
 package service
 
 import (
+	"container_manager/controller"
 	"context"
 	v1 "github.com/qinsheng99/crdcode/api/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -45,10 +46,15 @@ type Listen struct {
 	resource schema.GroupVersionResource
 }
 
-type RequestData struct {
+type StatusDetail struct {
 	IsUsable  bool   `json:"is_usable"`
 	AccessUrl string `json:"access_url,omitempty"`
 	ErrorMsg  string `json:"error_msg,omitempty"`
+}
+
+type InferenceRequest struct {
+	controller.InferenceInfo
+	Status StatusDetail
 }
 
 func NewListen(res *kubernetes.Clientset, c *rest.Config, dym dynamic.Interface, resource schema.GroupVersionResource) ListenInter {
@@ -101,13 +107,16 @@ func (l *Listen) dispatcher(res v1.CodeServer) {
 		}
 	}()
 
-	//jobType := res.Labels["type"]
+	status := l.transferStatus(res)
+	switch res.Labels["type"] {
+	case controller.MetaNameInference:
 
-	data := l.transferStatus(res)
-	log.Println("data:", data)
+	}
+
+	log.Println("data:", status)
 }
 
-func (l *Listen) transferStatus(res v1.CodeServer) (req RequestData) {
+func (l *Listen) transferStatus(res v1.CodeServer) (req StatusDetail) {
 	var endPoint string
 	for _, condition := range res.Status.Conditions {
 		if _, ok := serverUnusable[condition.Type]; ok {
