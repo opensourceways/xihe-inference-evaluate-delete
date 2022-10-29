@@ -5,30 +5,12 @@ import (
 	"context"
 	"github.com/qinsheng99/crdcode/api/v1"
 	"io/ioutil"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	"k8s.io/apimachinery/pkg/util/json"
-	"k8s.io/client-go/dynamic"
 )
-
-type ResListStatus struct {
-	ServerCreatedFlag  bool
-	ServerReadyFlag    bool
-	ServerInactiveFlag bool
-	ServerRecycledFlag bool
-	ServerErroredFlag  bool
-	ServerBoundFlag    bool
-	ServerCreatedTime  string
-	ServerReadyTime    string
-	ServerBoundTime    string
-	ServerInactiveTime string
-	ServerRecycledTime string
-	ServerErroredTime  string
-	InstanceEndpoint   string
-}
 
 type MetaNameInter interface {
 	GeneMetaName() string
@@ -78,7 +60,6 @@ func (s *K8sService) Get(name string) (interface{}, error) {
 
 	}
 	return res, nil
-
 }
 
 func (s *K8sService) Create(cd CreateInter) (interface{}, error) {
@@ -147,84 +128,4 @@ func (s *K8sService) resource() (kind *schema.GroupVersionKind, err error, _ *un
 		return nil, err, nil
 	}
 	return kind, nil, obj
-}
-
-func (s *K8sService) newValidation(code *unstructured.Unstructured, dr dynamic.ResourceInterface, object *unstructured.Unstructured) ResListStatus {
-	var (
-		err error
-		num int
-		bys []byte
-	)
-
-try:
-	rls := ResListStatus{}
-	code, err = dr.Get(context.TODO(), code.GetName(), metav1.GetOptions{})
-	if err != nil {
-		num++
-		if num >= 10 {
-			err = dr.Delete(context.TODO(), code.GetName(), metav1.DeleteOptions{})
-			rls.ServerErroredFlag = true
-		}
-		goto try
-	} else {
-		if object.GetAPIVersion() == code.GetAPIVersion() {
-			bys, err = json.Marshal(code.Object)
-			if err != nil {
-				goto Error
-			}
-
-			var res v1.CodeServer
-			err = json.Unmarshal(bys, &res)
-			if err != nil {
-				goto Error
-			}
-			if res.ObjectMeta.Name != object.GetName() {
-				goto Error
-			}
-
-			if len(res.Status.Conditions) > 0 {
-				for _, condition := range res.Status.Conditions {
-					switch condition.Type {
-					case v1.ServerCreated: //means the code server has been accepted by the system.
-						if condition.Status == corev1.ConditionTrue {
-							rls.ServerCreatedFlag = true
-						}
-						rls.ServerCreatedTime = condition.LastTransitionTime.String()
-					case v1.ServerReady: //means the code server has been ready for usage.
-						if condition.Status == corev1.ConditionTrue {
-							rls.ServerReadyFlag = true
-						}
-						rls.ServerReadyTime = condition.LastTransitionTime.String()
-						rls.InstanceEndpoint = condition.Message["instanceEndpoint"]
-					case v1.ServerBound: //means the code server has been bound to user.
-						if condition.Status == corev1.ConditionTrue {
-							rls.ServerBoundFlag = true
-						}
-						rls.ServerBoundTime = condition.LastTransitionTime.String()
-					case v1.ServerRecycled: //means the code server has been recycled totally.
-						if condition.Status == corev1.ConditionTrue {
-							rls.ServerRecycledFlag = true
-						}
-						rls.ServerRecycledTime = condition.LastTransitionTime.String()
-					case v1.ServerInactive: //means the code server will be marked inactive if `InactiveAfterSeconds` elapsed
-						if condition.Status == corev1.ConditionTrue {
-							rls.ServerInactiveFlag = true
-						}
-						rls.ServerInactiveTime = condition.LastTransitionTime.String()
-					case v1.ServerErrored: //means failed to reconcile code server.
-						if condition.Status == corev1.ConditionTrue {
-							rls.ServerErroredFlag = true
-						}
-						rls.ServerErroredTime = condition.LastTransitionTime.String()
-					}
-				}
-			}
-			goto True
-		}
-	}
-Error:
-	rls.ServerErroredFlag = true
-	return rls
-True:
-	return rls
 }

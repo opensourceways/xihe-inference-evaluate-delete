@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	v1 "github.com/qinsheng99/crdcode/api/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -17,6 +18,18 @@ import (
 	"sync"
 	"time"
 )
+
+var serverUnuseable = map[v1.ServerConditionType]struct{}{
+	v1.ServerRecycled: {},
+	v1.ServerInactive: {},
+	v1.ServerErrored:  {},
+}
+
+var serverUseable = map[v1.ServerConditionType]struct{}{
+	v1.ServerCreated: {},
+	v1.ServerReady:   {},
+	v1.ServerBound:   {},
+}
 
 type ListenInter interface {
 	ListenResource()
@@ -71,17 +84,38 @@ func (l *Listen) Update(oldObj, newObj interface{}) {
 		log.Println("unmarshal error:", err.Error())
 		return
 	}
-	log.Printf("%+v", res)
-	//go l.dispatcher(res)
+
+	go l.dispatcher(res)
 }
 
-func (l *Listen) dispatcher(data v1.CodeServer) {
+func (l *Listen) dispatcher(res v1.CodeServer) {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Println("dispatcher panic:", err)
 		}
 	}()
 
+	//jobType := res.Labels["type"]
+
+	status := l.transStatus(res)
+	log.Println("status:", status)
+}
+
+func (l *Listen) transStatus(res v1.CodeServer) bool {
+	for _, condition := range res.Status.Conditions {
+		if _, ok := serverUnuseable[condition.Type]; ok {
+			if condition.Status == corev1.ConditionTrue {
+				return false
+			}
+		}
+
+		if _, ok := serverUseable[condition.Type]; ok {
+			if condition.Status == corev1.ConditionFalse {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 func (l *Listen) Delete(obj interface{}) {
