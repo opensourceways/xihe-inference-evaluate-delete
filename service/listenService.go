@@ -19,13 +19,13 @@ import (
 	"time"
 )
 
-var serverUnuseable = map[v1.ServerConditionType]struct{}{
+var serverUnusable = map[v1.ServerConditionType]struct{}{
 	v1.ServerRecycled: {},
 	v1.ServerInactive: {},
 	v1.ServerErrored:  {},
 }
 
-var serverUseable = map[v1.ServerConditionType]struct{}{
+var serverUsable = map[v1.ServerConditionType]struct{}{
 	v1.ServerCreated: {},
 	v1.ServerReady:   {},
 	v1.ServerBound:   {},
@@ -43,6 +43,12 @@ type Listen struct {
 	config   *rest.Config
 	dym      dynamic.Interface
 	resource schema.GroupVersionResource
+}
+
+type RequestData struct {
+	IsUsable  bool   `json:"is_usable"`
+	AccessUrl string `json:"access_url,omitempty"`
+	ErrorMsg  string `json:"error_msg,omitempty"`
 }
 
 func NewListen(res *kubernetes.Clientset, c *rest.Config, dym dynamic.Interface, resource schema.GroupVersionResource) ListenInter {
@@ -97,25 +103,33 @@ func (l *Listen) dispatcher(res v1.CodeServer) {
 
 	//jobType := res.Labels["type"]
 
-	status := l.transStatus(res)
-	log.Println("status:", status)
+	data := l.transferStatus(res)
+	log.Println("data:", data)
 }
 
-func (l *Listen) transStatus(res v1.CodeServer) bool {
+func (l *Listen) transferStatus(res v1.CodeServer) (req RequestData) {
+	var endPoint string
 	for _, condition := range res.Status.Conditions {
-		if _, ok := serverUnuseable[condition.Type]; ok {
+		if _, ok := serverUnusable[condition.Type]; ok {
 			if condition.Status == corev1.ConditionTrue {
-				return false
+				req.ErrorMsg = condition.Reason
+				return
 			}
 		}
 
-		if _, ok := serverUseable[condition.Type]; ok {
+		if _, ok := serverUsable[condition.Type]; ok {
 			if condition.Status == corev1.ConditionFalse {
-				return false
+				req.ErrorMsg = condition.Reason
+				return
 			}
 		}
+		if endPoint == "" {
+			endPoint = condition.Message["instanceEndpoint"]
+		}
 	}
-	return true
+	req.IsUsable = true
+	req.AccessUrl = endPoint
+	return
 }
 
 func (l *Listen) Delete(obj interface{}) {
