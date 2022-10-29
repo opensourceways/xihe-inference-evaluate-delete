@@ -59,14 +59,8 @@ func (i *Inference) GeneMetaName() string {
 
 func (i *Inference) GeneLabels() map[string]string {
 	m := make(map[string]string)
-	b, err := json.Marshal(i.Info)
-	if err != nil {
-		log.Println(err)
-	}
-	err = json.Unmarshal(b, m)
-	if err != nil {
-		log.Println(err)
-	}
+	b, _ := json.Marshal(i.Info)
+	_ = json.Unmarshal(b, &m)
 	m["type"] = MetaNameInference
 	log.Println(m)
 	return m
