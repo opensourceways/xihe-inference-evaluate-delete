@@ -58,7 +58,7 @@ func (i *Inference) ExtendExpiry(c *gin.Context) {
 }
 
 func (i *Inference) GeneMetaName() string {
-	return fmt.Sprintf("%s-%s", MetaNameInference, i.Info.LastCommit)
+	return fmt.Sprintf("%s-%s-%s-%s", MetaNameInference, i.Info.ProjectOwner, i.Info.ProjectName, i.Info.Id)
 }
 
 func (i *Inference) GeneLabels() map[string]string {
