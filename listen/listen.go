@@ -1,15 +1,14 @@
 package listen
 
 import (
-	"bytes"
 	"context"
+	"github.com/opensourceways/xihe-grpc-protocol/grpc/client"
+	"github.com/opensourceways/xihe-grpc-protocol/grpc/inference"
 	"log"
-	"net/http"
 	"sync"
 	"time"
 
 	"container_manager/controller"
-	"github.com/opensourceways/community-robot-lib/utils"
 	v1 "github.com/qinsheng99/crdcode/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -52,14 +51,8 @@ type Listen struct {
 }
 
 type StatusDetail struct {
-	IsUsable  bool   `json:"is_usable"`
 	AccessUrl string `json:"access_url,omitempty"`
 	ErrorMsg  string `json:"error_msg,omitempty"`
-}
-
-type InferenceRequest struct {
-	InferenceInfo controller.InferenceInfo `json:"inference_info"`
-	Status        StatusDetail             `json:"status"`
 }
 
 func NewListen(res *kubernetes.Clientset, c *rest.Config, dym dynamic.Interface, resource schema.GroupVersionResource) (ListenInter, error) {
@@ -149,7 +142,6 @@ func (l *Listen) transferStatus(res v1.CodeServer) (status StatusDetail) {
 			endPoint = condition.Message["instanceEndpoint"]
 		}
 	}
-	status.IsUsable = true
 	status.AccessUrl = endPoint
 	return
 }
@@ -159,29 +151,27 @@ func (l *Listen) HandleInference(labels []byte, status StatusDetail) {
 	if err := json.Unmarshal(labels, &inferenceInfo); err != nil {
 		log.Println("handle inference unmarshal error:", err.Error())
 	}
-	RequestData := InferenceRequest{
-		InferenceInfo: inferenceInfo,
-		Status:        status,
+
+	cli, err := client.NewInferenceClient(l.nConfig.Inference.RpcEndpoint)
+	if err != nil {
+		log.Println("new rpc client error:", err.Error())
 	}
 
-	payload, err := utils.JsonMarshal(RequestData)
-	if err != nil {
-		log.Println("payload marshal fail:", err.Error())
+	index := inference.InferenceIndex{
+		Id:         inferenceInfo.Id,
+		User:       inferenceInfo.ProjectOwner,
+		ProjectId:  inferenceInfo.ProjectId,
+		LastCommit: inferenceInfo.LastCommit,
 	}
 
-	url := l.nConfig.Inference.NotifyUrl
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(payload))
-	if err != nil {
-		log.Println("new request error:", err.Error())
+	info := inference.InferenceInfo{
+		Error:     status.ErrorMsg,
+		AccessURL: status.AccessUrl,
 	}
-	var result interface{}
-	cli := utils.NewHttpClient(3)
-	code, err := cli.ForwardTo(req, &result)
-	if err != nil {
-		log.Println("response error:", err.Error())
+	if err = cli.SetInferenceInfo(&index, &info); err != nil {
+		log.Println("call rpc error:", err.Error())
 	}
-
-	log.Println("response code :", code)
+	log.Println("handle inference success")
 }
 
 func (l *Listen) Delete(obj interface{}) {

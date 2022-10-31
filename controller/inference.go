@@ -2,7 +2,6 @@ package controller
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 
 	"container_manager/service"
@@ -69,6 +68,5 @@ func (i *Inference) GeneLabels() map[string]string {
 	b, _ := json.Marshal(i.Info)
 	_ = json.Unmarshal(b, &m)
 	m["type"] = MetaNameInference
-	log.Println(m)
 	return m
 }

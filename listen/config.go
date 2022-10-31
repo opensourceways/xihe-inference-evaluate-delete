@@ -10,7 +10,7 @@ type Config struct {
 }
 
 type Inference struct {
-	NotifyUrl string `json:"notify_url" required:"true"`
+	RpcEndpoint string `json:"rpc_endpoint" required:"true"`
 }
 
 func loadConfig(nConfig *Config) error {
@@ -24,8 +24,8 @@ func loadConfig(nConfig *Config) error {
 }
 
 func (c Config) Validate() error {
-	if c.Inference.NotifyUrl == "" {
-		return errors.New("notify_url can not be empty")
+	if c.Inference.RpcEndpoint == "" {
+		return errors.New("rpc_endpoint can not be empty")
 	}
 	return nil
 }
