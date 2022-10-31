@@ -1,12 +1,14 @@
 package controller
 
 import (
+	"fmt"
+	"log"
+	"strconv"
+
 	"container_manager/service"
 	"container_manager/tools"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"k8s.io/apimachinery/pkg/util/json"
-	"log"
 )
 
 const MetaNameInference = "inference"
@@ -21,7 +23,7 @@ type InferenceInfo struct {
 	LastCommit   string `json:"last_commit"`
 	ProjectName  string `json:"project_name"`
 	ProjectOwner string `json:"project_owner"`
-	Expiry       int    `json:"expiry,omitempty"`
+	Expiry       string `json:"expiry,omitempty"`
 }
 
 func NewInferControl() *Inference {
@@ -53,7 +55,8 @@ func (i *Inference) ExtendExpiry(c *gin.Context) {
 	}
 	i.Info = &t
 
-	data, err := service.NewK8sService().Update(i, i.Info.Expiry)
+	expiry, _ := strconv.Atoi(i.Info.Expiry)
+	data, err := service.NewK8sService().Update(i, expiry)
 	tools.Response(c, data, err)
 }
 

@@ -2,10 +2,12 @@ package sdk
 
 import (
 	"bytes"
+	"net/http"
+	"strconv"
+	"strings"
+
 	"container_manager/controller"
 	"github.com/opensourceways/community-robot-lib/utils"
-	"net/http"
-	"strings"
 )
 
 type InferenceInfo = controller.InferenceInfo
@@ -40,13 +42,14 @@ func (i InferenceEvaluate) InferenceCreate(info *InferenceInfo) error {
 	return nil
 }
 
-func (i InferenceEvaluate) InferenceExpiry(info *InferenceInfo) error {
+func (i InferenceEvaluate) InferenceExpiry(info *InferenceInfo, expiry int) error {
+	info.Expiry = strconv.Itoa(expiry)
 	payload, err := utils.JsonMarshal(info)
 	if err != nil {
 		return err
 	}
 
-	url := i.endpoint + "extend_expiry"
+	url := i.endpoint + "/inference/extend_expiry"
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(payload))
 	if err != nil {
 		return err

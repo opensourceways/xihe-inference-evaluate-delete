@@ -2,8 +2,13 @@ package listen
 
 import (
 	"bytes"
-	"container_manager/controller"
 	"context"
+	"log"
+	"net/http"
+	"sync"
+	"time"
+
+	"container_manager/controller"
 	"github.com/opensourceways/community-robot-lib/utils"
 	v1 "github.com/qinsheng99/crdcode/api/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -17,10 +22,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
-	"log"
-	"net/http"
-	"sync"
-	"time"
 )
 
 var serverUnusable = map[v1.ServerConditionType]struct{}{
