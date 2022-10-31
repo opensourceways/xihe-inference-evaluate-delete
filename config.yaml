@@ -1,2 +1,2 @@
 inference:
-  notify_url: http://www.baidu.com
+  rpc_endpoint: http://www.baidu.com
