@@ -55,11 +55,8 @@ type StatusDetail struct {
 	ErrorMsg  string `json:"error_msg,omitempty"`
 }
 
-func NewListen(res *kubernetes.Clientset, c *rest.Config, dym dynamic.Interface, resource schema.GroupVersionResource) (ListenInter, error) {
-	nConfig := new(Config)
-	if err := loadConfig(nConfig); err != nil {
-		return nil, err
-	}
+func NewListen(
+	res *kubernetes.Clientset, c *rest.Config, dym dynamic.Interface, resource schema.GroupVersionResource, nConfig *Config) (ListenInter, error) {
 	return &Listen{res: res, wg: &sync.WaitGroup{}, mux: &sync.Mutex{}, config: c, dym: dym, resource: resource, nConfig: nConfig}, nil
 }
 

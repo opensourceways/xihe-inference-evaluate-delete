@@ -13,8 +13,8 @@ type Inference struct {
 	RpcEndpoint string `json:"rpc_endpoint" required:"true"`
 }
 
-func loadConfig(nConfig *Config) error {
-	if err := utils.LoadFromYaml("./config.yaml", nConfig); err != nil {
+func LoadConfig(file string, nConfig *Config) error {
+	if err := utils.LoadFromYaml(file, nConfig); err != nil {
 		return err
 	}
 	if err := nConfig.Validate(); err != nil {
