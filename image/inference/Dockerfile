@@ -13,6 +13,8 @@ FROM python:3.9.13
 WORKDIR /usr/src/app
 
 COPY ./requirements.txt ./requirements.txt
+COPY ./run.sh ./run.sh
+COPY ./pretrain.py ./pretrain.py
 COPY --from=BUILDER /opt/build/obsutil /usr/src/app/obsutil
 
 RUN pip install --upgrade -i https://pypi.tuna.tsinghua.edu.cn/simple pip 

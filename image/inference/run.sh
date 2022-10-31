@@ -18,8 +18,9 @@ repo_url=http://${xihe_user}:${xihe_user_token}@${gitlab_endpoint}
 app=app.py
 
 # workspace
-work_dir=$(pwd)/{workspace}
-mkdir $work_dir
+dir=$(pwd)
+work_dir=$dir/{workspace}
+test -d $work_dir || mkdir $work_dir
 cd $work_dir
 
 # helper
@@ -68,7 +69,7 @@ fi
 f="./$inference_dir/config.json"
 
 if [ -e "$f" -a -s "$f" ]; then
-	v=$(python3 ./pretrain.py $f)
+	v=$(python3 $dir/pretrain.py $f)
 	if [ $? -ne 0 ]; then
 		echo $v
 		exit 1
