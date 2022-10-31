@@ -1,0 +1,12 @@
+gradio
+mindspore
+opencv-python
+opencv-python-headless
+opencv-contrib-python
+opencv-contrib-python-headless
+jinja2
+numpy
+pandas
+matplotlib
+mindvision
+esdk-obs-python==3.21.4
